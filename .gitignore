@@ -1,0 +1,5 @@
+lumberjack
+*.o
+*.csv
+*.py
+octo

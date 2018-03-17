@@ -1,12 +1,66 @@
 #ifndef __SQLITE_DRIVER_H
 #define __SQLITE_DRIVER_H
 
+#include <unordered_map>
+
+#include <semaphore.h>
 #include <sqlite3.h>
+#include <unistd.h>
+
+/**
+ * An enum denotign all of the possible tables the user can read from.
+ * NONE is added as an error state in the case an invalid value is passed in.
+ */
+enum DataType {
+	ACS,
+	POWER,
+	BEAM_STEERING,
+	NONE
+}
+
+
+/**
+ * Number of columns in each subsystem.
+ */
+#define ACS_COL 	16
+#define POWER_COL 	3
+#define BS_COL 		17
+
+
+/**
+ * Location and name of log file.
+ * When writing to, this will be appendended to the name of the team that is
+ * dumping it's logs. e.g. ACS_log.csv
+ */
+extern std::string ofName;
+
+
+/**
+ * Map from each enum to a string representing them. 
+ * This is initialized in {@link init}.
+ */
+std::unordered_map<DataType, std::string> typeMap;
+
+
+/**
+ * Var used by read callback to determine the table it is reading from.
+ * This is used to match on the final column name as a way of adding a
+ * new line at the end of the CSV it is writing to.
+ */
+extern DataType tableMatch;
+
+
+/**
+ * Lock used to acquire {@link tableMatch} for writing to. 
+ */
+extern sem_t dumpMutex;
+
 
 /**
  * Global reference to SQLite database.
  */
 static sqlite3 *db;
+
 	
 /**
  * Initializes the SQLite Database.
@@ -15,32 +69,14 @@ static sqlite3 *db;
  */
 void init();
 
-/**
- * Callback method for when read is completed. 
- * @return Just 0.
- */
-static int readCallback(void *NotUsed, int argc, char **argv, char **azColName);
+int dumpDb(DataType dt);
+static int writeToCsv(void *NotUsed, int argc, char **argv, char **azColName);
 
-/**
- * Begins reading values from the database. 
- * Reads will returned in the readCallback method.
- * @return 0 on success, -1 on failure.
- */
+int writeDb(DataType dt, void* data);
 static int writeCallback(void *NotUsed, int argc, char **argv, char **azColName);
 
-/**
- * Writes values to the database. 
- * Returns primary key of inserted values in writeCallback method.
- * @return 0 on success, -1 on failure.
- */
-int writeToDatabase();
 
-/**
- * Begins reading from database.
- * Read happens in readCallback method. 
- * @return 0 on success, -1 on failure.
- */
-int readFromDatabase();
+void cleanUp();
 
 /**
  * Closes reference to database.

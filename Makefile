@@ -1,7 +1,8 @@
 # Requires SQLite 3 to be installed:
-# sudo apt-get install sqlite3 libsqlite3-dev
+# `sudo apt-get install sqlite3 libsqlite3-dev`
 # Optionally SQLite headers may be downloaded instead, and compiled as a dependency
-# These will be excluded as it is assumed we are working on a debian based system
+# These will be excluded as it is assumed we are working on a system that has 
+# the dependency preinstalled
 
 CC=g++
 CFLAGS=-lsqlite3 -std=c++11 -Wall

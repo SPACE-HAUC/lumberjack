@@ -29,6 +29,8 @@ enum DataType {
 };
 
 
+char* msg = 0;
+
 /**
  * Location and name of log file.
  * When writing to, this will be appendended to the name of the team that is
@@ -71,10 +73,10 @@ static sqlite3 *db;
  */
 void init();
 
-int dumpDb(DataType dt);
+char* dumpDb(DataType dt);
 static int writeToCsv(void *NotUsed, int argc, char **argv, char **azColName);
 
-int writeDb(DataType dt, void* data);
+char* writeDb(DataType dt, void* data);
 static int writeCallback(void *NotUsed, int argc, char **argv, char **azColName);
 
 

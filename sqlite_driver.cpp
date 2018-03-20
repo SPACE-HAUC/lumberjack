@@ -15,19 +15,19 @@
 /**
  * Reads chosen database and begins the process to dump it to a csv file.
  */
-int dumpDb(DataType dt) {
+char* dumpDb(DataType dt) {
 	sem_wait(&dumpMutex);
 	tableMatch = dt;
 	char* zErrMsg = 0;
 	std::string query = "SELECT * FROM " + typeMap[dt];
 	int rc = sqlite3_exec(db, query.c_str(), writeToCsv, 0, &zErrMsg);
 	if (rc != SQLITE_OK) {
-		std::cout << "Failed to open database\n";
+		std::cout << "Failed to open database " + typeMap[dt] + " \n";
 		std::cout << zErrMsg;
 		sqlite3_free(zErrMsg);
-		return -1;
+		return msg;
 	}
-	return 0;
+	return msg;
 }
 
 
@@ -64,10 +64,14 @@ static int writeToCsv(void *NotUsed, int argc, char **argv, char **azColName) {
 	sem_post(&dumpMutex);
 
 	for (int i = 0; i < numCols; ++i) {
-		log << azColName[i] << ",";
+		log << azColName[i];
+		if (i < numCols - 1) {
+			log << ",";
+		} else {
+			log << "\n";
+		}
 	}
 
-	log << "\n";
 
 	for (int i = 0; i < argc; ++i) {
 		log << argv[i];
@@ -79,11 +83,11 @@ static int writeToCsv(void *NotUsed, int argc, char **argv, char **azColName) {
 	}
 
 	log.close();
-	return 1;
+	return 0;
 }
 
 
-int writeDb(DataType dt, void* data) {
+char* writeDb(DataType dt, void* data) {
 	char* zErrMsg = 0;
 	int rc;
 
@@ -93,6 +97,7 @@ int writeDb(DataType dt, void* data) {
 				struct AcsData aData = *((AcsData*) data);
 				std::string aQuery = "INSERT INTO " + typeMap[ACS] 
 					+ " VALUES ( " 
+					+ " null " + ","
 					+ std::to_string(aData.mag_x) + ", " 
 					+ std::to_string(aData.mag_y) + ", " 
 					+ std::to_string(aData.mag_z) + ", " 
@@ -117,6 +122,7 @@ int writeDb(DataType dt, void* data) {
 				struct BeamSteeringData bData = *((BeamSteeringData*) data);
 				std::string bQuery = "INSERT INTO " + typeMap[POWER]
 					+ " VALUES ( " 
+					+ " null " + ","
 					+ std::to_string(bData.phase_beam_1) + ", " 
 					+ std::to_string(bData.phase_beam_2) + ", " 
 					+ std::to_string(bData.phase_beam_3) + ", " 
@@ -142,6 +148,7 @@ int writeDb(DataType dt, void* data) {
 				struct PowerData pData = *((PowerData*) data);
 				std::string pQuery = "INSERT INTO " + typeMap[POWER]
 					+ " VALUES ( " 
+					+ " null " + ","
 					+ std::to_string(pData.net_power) + ", " 
 					+ std::to_string(pData.future_power)
 					+ " )";
@@ -149,16 +156,16 @@ int writeDb(DataType dt, void* data) {
 			}
 			break;
 		default:
-			rc = -1;
-	}
+			rc = SQLITE_OK - 1;
 
+	}
 	if (rc != SQLITE_OK) {
 		std::cout << "Failure to write command\n";
 		std::cout << zErrMsg;
 		sqlite3_free(zErrMsg);
-		return -1;
+		return msg;
 	}
-	return 0;
+	return msg;
 }
 
 
@@ -273,8 +280,41 @@ int loadOrSaveDb(sqlite3 *pInMemory, const char *zFilename, int isSave){
 	return rc;
 }
 
+void testData() {
+	struct PowerData pData;
+	pData.net_power = 22.2;
+	pData.future_power = 4.4;
+
+	writeDb(POWER, &pData);
+	//dumpDb(POWER);
+
+	struct AcsData aData;
+	aData.mag_x = 5.0;
+	aData.mag_y = 7.1;
+	aData.mag_z = 4.3;
+	aData.gyro_x = 2.2;
+	aData.gyro_y = 1.5;
+	aData.gyro_z = 22.2;
+	aData.light_sensor_1 = 7.2;
+	aData.light_sensor_2 = 9.9;
+	aData.light_sensor_3 = 233.2;
+	aData.light_sensor_4 = 32.0;
+	aData.light_sensor_5 = 111.1;
+	aData.light_sensor_6 = 101.88;
+	aData.light_sensor_7 = 44.6;
+	aData.light_sensor_8 = 29.2;
+	aData.sun_sensor_dark = true;
+
+	writeDb(ACS, &aData);
+	//dumpDb(ACS);
+
+}
+
 int main(int argc, char*argv[]) {
 	init();
+
+	testData();
+
 	closeDatabase();
 	cleanUp();
 	return 0;

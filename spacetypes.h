@@ -16,6 +16,7 @@ struct AcsData {
 	double light_sensor_6;
 	double light_sensor_7;
 	double light_sensor_8;
+	bool sun_sensor_dark;
 };
 
 struct BeamSteeringData {

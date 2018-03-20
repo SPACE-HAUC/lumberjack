@@ -5,9 +5,11 @@
 # the dependency preinstalled
 
 CC=g++
-CFLAGS=-lsqlite3 -std=c++11 -Wall -fpermissive -lpthread
+CFLAGS=-lsqlite3 -std=c++11 -Wall -lpthread
 OBJ=sqlite_driver.o
 EXE=sqlite_driver
+DB=octo
+LOG=*.csv
 
 all: sqlite_driver.o
 	 $(CC) $(OBJ) $(CFLAGS) -o $(EXE)
@@ -18,6 +20,9 @@ sqlite_driver.o: sqlite_driver.cpp
 clean:
 	rm -rf $(OBJ) $(EXE)
 	
+clean_all: clean
+	rm -rf $(DB) $(LOG)
+
 remake:
-	make clean
+	make clean_all
 	make all

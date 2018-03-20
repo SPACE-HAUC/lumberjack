@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <unordered_map>
@@ -18,7 +19,8 @@ int dumpDb(DataType dt) {
 	sem_wait(&dumpMutex);
 	tableMatch = dt;
 	char* zErrMsg = 0;
-	int rc = sqlite3_exec(db, "SELECT * FROM " + typeMap[dt], writeToCsv, 0, &zErrMsg);
+	std::string query = "SELECT * FROM " + typeMap[dt];
+	int rc = sqlite3_exec(db, query.c_str(), writeToCsv, 0, &zErrMsg);
 	if (rc != SQLITE_OK) {
 		std::cout << "Failed to open database\n";
 		std::cout << zErrMsg;
@@ -35,18 +37,18 @@ int dumpDb(DataType dt) {
  *
  * Method is expected to have thread safe access to tableMatch.
  */
-static char* writeToCsv(void *NotUsed, int argc, char **argv, char **azColName) {
+static int writeToCsv(void *NotUsed, int argc, char **argv, char **azColName) {
 	// Jump column. This is the final column, and where we insert the new line.
 	std::string jCol;
 	std::string logName;
 	std::ofstream log(typeMap[tableMatch] + ofName);
 	int numCols = -1; 
 	switch (tableMatch) {
-		case ACS:
+		case ACS: 
 			jCol = "sun_sensor_dark";
 			numCols = ACS_COL;
 			break;
-		case POWER:
+		case POWER: 
 			jCol = "future_power";
 			numCols = POWER_COL;
 			break;
@@ -56,27 +58,28 @@ static char* writeToCsv(void *NotUsed, int argc, char **argv, char **azColName) 
 			break;
 		default:
 			std::perror("Attempting to log unknown subsystem");
-			return
+			return -1;
 	}
 
 	sem_post(&dumpMutex);
 
 	for (int i = 0; i < numCols; ++i) {
-		fout << azColName[i] << ",";
+		log << azColName[i] << ",";
 	}
 
-	fout << "\n";
+	log << "\n";
 
 	for (int i = 0; i < argc; ++i) {
-		fout << argv[i];
+		log << argv[i];
 		if (std::strcmp(azColName[i], argv[i]) != 0) {
-			fout << ",";
+			log << ",";
 		} else {
-			fout << "\n";
+			log << "\n";
 		}
 	}
 
 	log.close();
+	return 1;
 }
 
 
@@ -86,39 +89,68 @@ int writeDb(DataType dt, void* data) {
 
 	switch (dt) {
 		case ACS:
-			struct AcsData = (AcsData) (*data);
-			int rc = sqlite3_exec(db, "INSERT INTO " + typeMap[ACS] 
+			{
+				struct AcsData aData = *((AcsData*) data);
+				std::string aQuery = "INSERT INTO " + typeMap[ACS] 
 					+ " VALUES ( " 
-					+ data.mag_x
-					+ data.mag_y
-					+ data.mag_z
-					+ data.gyro_x
-					+ data.gyro_y
-					+ data.gyro_z
-					+ data.light_sensor_1
-					+ data.light_sensor_2
-					+ data.light_sensor_3
-					+ data.light_sensor_4
-					+ data.light_sensor_4
-					+ data.light_sensor_5
-					+ data.light_sensor_6
-					+ data.light_sensor_7
-					+ data.light_sensor_8
-					+ " )", writeCallback, 0, &zErrMsg);
-			break;
-		case POWER:
-			// TODO: Insert power vals
-			struct PowerData = (PowerData) (*data);
+					+ std::to_string(aData.mag_x) + ", " 
+					+ std::to_string(aData.mag_y) + ", " 
+					+ std::to_string(aData.mag_z) + ", " 
+					+ std::to_string(aData.gyro_x) + ", " 
+					+ std::to_string(aData.gyro_y) + ", " 
+					+ std::to_string(aData.gyro_z) + ", " 
+					+ std::to_string(aData.light_sensor_1) + ", " 
+					+ std::to_string(aData.light_sensor_2) + ", " 
+					+ std::to_string(aData.light_sensor_3) + ", " 
+					+ std::to_string(aData.light_sensor_4) + ", " 
+					+ std::to_string(aData.light_sensor_4) + ", " 
+					+ std::to_string(aData.light_sensor_5) + ", " 
+					+ std::to_string(aData.light_sensor_6) + ", " 
+					+ std::to_string(aData.light_sensor_7) + ", " 
+					+ std::to_string(aData.light_sensor_8)
+					+ " )";
+				rc = sqlite3_exec(db, aQuery.c_str(), writeCallback, 0, &zErrMsg);
+			}
 			break;
 		case BEAM_STEERING:
-			// TODO: Insert beam steering vals
-			struct BeamSteeringData = (BeamSteeringData) (*data);
+			{
+				struct BeamSteeringData bData = *((BeamSteeringData*) data);
+				std::string bQuery = "INSERT INTO " + typeMap[POWER]
+					+ " VALUES ( " 
+					+ std::to_string(bData.phase_beam_1) + ", " 
+					+ std::to_string(bData.phase_beam_2) + ", " 
+					+ std::to_string(bData.phase_beam_3) + ", " 
+					+ std::to_string(bData.phase_beam_4) + ", " 
+					+ std::to_string(bData.phase_beam_5) + ", " 
+					+ std::to_string(bData.phase_beam_6) + ", " 
+					+ std::to_string(bData.phase_beam_7) + ", " 
+					+ std::to_string(bData.phase_beam_8) + ", " 
+					+ std::to_string(bData.phase_beam_9) + ", " 
+					+ std::to_string(bData.phase_beam_10) + ", " 
+					+ std::to_string(bData.phase_beam_11) + ", " 
+					+ std::to_string(bData.phase_beam_12) + ", " 
+					+ std::to_string(bData.phase_beam_13) + ", " 
+					+ std::to_string(bData.phase_beam_14) + ", " 
+					+ std::to_string(bData.phase_beam_15) + ", " 
+					+ std::to_string(bData.phase_beam_16) 
+					+ " )";
+				rc = sqlite3_exec(db, bQuery.c_str(), writeCallback, 0, &zErrMsg);
+			}
+			break;
+		case POWER:
+			{
+				struct PowerData pData = *((PowerData*) data);
+				std::string pQuery = "INSERT INTO " + typeMap[POWER]
+					+ " VALUES ( " 
+					+ std::to_string(pData.net_power) + ", " 
+					+ std::to_string(pData.future_power)
+					+ " )";
+				rc = sqlite3_exec(db, pQuery.c_str(), writeCallback, 0, &zErrMsg);
+			}
 			break;
 		default:
 			rc = -1;
 	}
-
-	int rc = sqlite3_exec(db, "INSERT INTO power VALUES (null, 4.5, 6.7)", writeCallback, 0, &zErrMsg);
 
 	if (rc != SQLITE_OK) {
 		std::cout << "Failure to write command\n";
@@ -137,11 +169,6 @@ static int writeCallback(void *NotUsed, int argc, char **argv, char **azColName)
 	return 1;
 }
 
-/************
- * LEGACY SQL FUNCTIONS -- end
- */
-
-
 void init() {
 	// Set up data map
 	typeMap[ACS] = "acs";
@@ -151,7 +178,6 @@ void init() {
 	// Set up table vars
 	ofName = "_log.csv";
 	tableMatch = NONE;
-	numCol = -1;
 
 	// Init semaphore
 	sem_init(&dumpMutex, 0, 252);
@@ -164,7 +190,7 @@ void init() {
 	}
 
 	// Creates table if it doesn't exist
-	const char* acsTable = "CREATE TABLE IF NOT EXISTS " + typeMap[ACS] +" ( \
+	std::string acsTable = "CREATE TABLE IF NOT EXISTS " + typeMap[ACS] + " ( \
 				id INTEGER PRIMARY KEY AUTOINCREMENT,\
 				mag_x FLOAT,\
 				mag_y FLOAT,\
@@ -182,7 +208,7 @@ void init() {
 				light_sensor_8 FLOAT,\
 				sun_sensor_dark BOOL);";
 
-	const char* beamSteeringTable = "CREATE TABLE IF NOT EXISTS " + typeMap[BEAM_STEERING] +" ( \
+	std::string beamSteeringTable = "CREATE TABLE IF NOT EXISTS " + typeMap[BEAM_STEERING] +" ( \
 					 id INTEGER PRIMARY KEY AUTOINCREMENT,\
 					 phase_beam_1 FLOAT,\
 					 phase_beam_2 FLOAT,\
@@ -200,15 +226,15 @@ void init() {
 					 phase_beam_14 FLOAT,\
 					 phase_beam_15 FLOAT,\
 					 phase_beam_16 FLOAT);";
-	
-	const char* powerTable = "CREATE TABLE IF NOT EXISTS " + typeMap[POWER] + " ( \
+
+	std::string powerTable = "CREATE TABLE IF NOT EXISTS " + typeMap[POWER] + " ( \
 				  id INTEGER PRIMARY KEY AUTOINCREMENT,\
 				  net_power FLOAT,\
 				  future_power FLOAT);";
 
-	sqlite3_exec(db, acsTable, nullptr, nullptr, nullptr);
-	sqlite3_exec(db, beamSteeringTable, nullptr, nullptr, nullptr);
-	sqlite3_exec(db, powerTable, nullptr, nullptr, nullptr);
+	sqlite3_exec(db, acsTable.c_str(), nullptr, nullptr, nullptr);
+	sqlite3_exec(db, beamSteeringTable.c_str(), nullptr, nullptr, nullptr);
+	sqlite3_exec(db, powerTable.c_str(), nullptr, nullptr, nullptr);
 }
 
 void closeDatabase() {
@@ -217,41 +243,24 @@ void closeDatabase() {
 }
 
 void cleanUp() {
-	sem_destroy(dumpMutex);
+	sem_destroy(&dumpMutex);
 }
 
 
 int loadOrSaveDb(sqlite3 *pInMemory, const char *zFilename, int isSave){
-	int rc;                   /* Function return code */
-	sqlite3 *pFile;           /* Database connection opened on zFilename */
-	sqlite3_backup *pBackup;  /* Backup object used to copy data */
-	sqlite3 *pTo;             /* Database to copy to (pFile or pInMemory) */
-	sqlite3 *pFrom;           /* Database to copy from (pFile or pInMemory) */
-	/* Open the database file identified by zFilename. Exit early if this fails
-	 ** for any reason. */
+	int rc;                   
+	sqlite3 *pFile;           
+	sqlite3_backup *pBackup;  
+	sqlite3 *pTo;             
+	sqlite3 *pFrom;           
 	rc = sqlite3_open(zFilename, &pFile);
-	if(rc==SQLITE_OK){
-
-		/* If this is a 'load' operation (isSave==0), then data is copied
-		 ** from the database file just opened to database pInMemory. 
-		 ** Otherwise, if this is a 'save' operation (isSave==1), then data
-		 ** is copied from pInMemory to pFile.  Set the variables pFrom and
-		 ** pTo accordingly. */
+	if (rc==SQLITE_OK) {
+		// Check to see if using in memory database. 
+		// Will load and save accordingly.
 		pFrom = (isSave ? pInMemory : pFile);
 		pTo   = (isSave ? pFile     : pInMemory);
 
-		/* Set up the backup procedure to copy from the "main" database of 
-		 ** connection pFile to the main database of connection pInMemory.
-		 ** If something goes wrong, pBackup will be set to NULL and an error
-		 ** code and message left in connection pTo.
-		 **
-		 ** If the backup object is successfully created, call backup_step()
-		 ** to copy data from pFile to pInMemory. Then call backup_finish()
-		 ** to release resources associated with the pBackup object.  If an
-		 ** error occurred, then an error code and message will be left in
-		 ** connection pTo. If no error occurred, then the error code belonging
-		 ** to pTo is set to SQLITE_OK.
-		 */
+		// Set up backup
 		pBackup = sqlite3_backup_init(pTo, "main", pFrom, "main");
 		if(pBackup){
 			(void)sqlite3_backup_step(pBackup, -1);
@@ -260,20 +269,14 @@ int loadOrSaveDb(sqlite3 *pInMemory, const char *zFilename, int isSave){
 		rc = sqlite3_errcode(pTo);
 	}
 
-	/* Close the database connection opened on database file zFilename
-	 ** and return the result of this function. */
-	(void)sqlite3_close(pFile);
+	(void) sqlite3_close(pFile);
 	return rc;
 }
 
 int main(int argc, char*argv[]) {
 	init();
-	writeToDatabase();
-	//readFromDatabase();
 	closeDatabase();
 	cleanUp();
 	return 0;
 }
-
-
 

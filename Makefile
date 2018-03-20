@@ -5,7 +5,7 @@
 # the dependency preinstalled
 
 CC=g++
-CFLAGS=-lsqlite3 -std=c++11 -Wall
+CFLAGS=-lsqlite3 -std=c++11 -Wall -fpermissive -lpthread
 OBJ=sqlite_driver.o
 EXE=sqlite_driver
 

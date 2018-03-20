@@ -1,22 +1,12 @@
 #ifndef __SQLITE_DRIVER_H
 #define __SQLITE_DRIVER_H
 
-#include <unordered_map>
+#include <map>
 
 #include <semaphore.h>
+#include <string>
 #include <sqlite3.h>
 #include <unistd.h>
-
-/**
- * An enum denotign all of the possible tables the user can read from.
- * NONE is added as an error state in the case an invalid value is passed in.
- */
-enum DataType {
-	ACS,
-	POWER,
-	BEAM_STEERING,
-	NONE
-}
 
 
 /**
@@ -28,18 +18,30 @@ enum DataType {
 
 
 /**
+ * An enum denoting all of the possible tables the user can read from.
+ * NONE is added as an error state in the case an invalid value is passed in.
+ */
+enum DataType {
+	ACS,
+	POWER,
+	BEAM_STEERING,
+	NONE
+};
+
+
+/**
  * Location and name of log file.
  * When writing to, this will be appendended to the name of the team that is
  * dumping it's logs. e.g. ACS_log.csv
  */
-extern std::string ofName;
+std::string ofName;
 
 
 /**
  * Map from each enum to a string representing them. 
  * This is initialized in {@link init}.
  */
-std::unordered_map<DataType, std::string> typeMap;
+std::map<DataType, std::string> typeMap;
 
 
 /**
@@ -47,13 +49,13 @@ std::unordered_map<DataType, std::string> typeMap;
  * This is used to match on the final column name as a way of adding a
  * new line at the end of the CSV it is writing to.
  */
-extern DataType tableMatch;
+DataType tableMatch;
 
 
 /**
  * Lock used to acquire {@link tableMatch} for writing to. 
  */
-extern sem_t dumpMutex;
+sem_t dumpMutex;
 
 
 /**
@@ -61,7 +63,7 @@ extern sem_t dumpMutex;
  */
 static sqlite3 *db;
 
-	
+
 /**
  * Initializes the SQLite Database.
  * Attempting to use any database methods before calling init will cause a 

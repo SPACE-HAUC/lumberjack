@@ -1,3 +1,6 @@
+#ifndef __SPACETYPES_H
+#define __SPACETYPES_H
+
 struct AcsData {
 	double mag_x;
 	double mag_y;
@@ -13,7 +16,7 @@ struct AcsData {
 	double light_sensor_6;
 	double light_sensor_7;
 	double light_sensor_8;
-}
+};
 
 struct BeamSteeringData {
 	double phase_beam_1;
@@ -32,9 +35,12 @@ struct BeamSteeringData {
 	double phase_beam_14;
 	double phase_beam_15;
 	double phase_beam_16;
-}
+};
 
 struct PowerData {
 	double net_power;
 	double future_power;
-}
+};
+
+#endif  // __SPACETYPES_H
+

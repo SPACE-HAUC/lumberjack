@@ -286,7 +286,7 @@ void testData() {
 	pData.future_power = 4.4;
 
 	writeDb(POWER, &pData);
-	//dumpDb(POWER);
+	dumpDb(POWER);
 
 	struct AcsData aData;
 	aData.mag_x = 5.0;
@@ -306,7 +306,7 @@ void testData() {
 	aData.sun_sensor_dark = true;
 
 	writeDb(ACS, &aData);
-	//dumpDb(ACS);
+	dumpDb(ACS);
 
 }
 

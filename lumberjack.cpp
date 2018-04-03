@@ -35,7 +35,7 @@ char* dumpDb(DataType dt) {
         std::remove(dInfo.outName.c_str());
 
 	if (dt == NONE) {
-		return;
+		return msg;
 	}
 
         if (dt == ALL) {
@@ -224,7 +224,7 @@ char* writeDb(DataType dt, void* data) {
 }
 
 
-void connectDb() {
+void initDb() {
         // Set up data map
         typeMap[ACS] = "acs";
         typeMap[POWER] = "power";
@@ -293,13 +293,18 @@ void connectDb() {
 }
 
 
-void closeDb() {
+void disconnectDb() {
         loadOrSaveDb(db, "octo", 1);
         sqlite3_close(db);
 }
 
 
-int connectDb(sqlite3 *pInMemory, const char *zFilename, int isSave) {
+void connectDb() {
+	loadOrSaveDb(db, "octo", 1);
+}
+
+
+int loadOrSaveDb(sqlite3 *pInMemory, const char *zFilename, int isSave) {
         int rc;
         sqlite3 *pFile;
         sqlite3_backup *pBackup;
@@ -327,72 +332,90 @@ int connectDb(sqlite3 *pInMemory, const char *zFilename, int isSave) {
 
 
 void* manageDump(void* arg) {
-        DataType dt;
-        while (execute) {
-                dt = dumpScriber -> get_data();
-                connectDb();
-                dumpDb(dt);
-                disconnectDb();
-        }
-        delete dumpScriber;
-        dumpIsFinished = true;
-        return NULL;
+	// Ignore signals
+	sigset_t mask;
+	sigfillset(&mask);
+	sigprocmask(SIG_SETMASK, &mask, NULL);
+	DataType dt;
+
+	connectDb();
+	initDb();
+	disconnectDb();
+
+	while (execute) {
+		dt = dumpScriber -> get_data();
+		connectDb();
+		dumpDb(dt);
+		disconnectDb();
+	}
+	delete dumpScriber;
+	dumpIsFinished = true;
+	return NULL;
 }
 
 
 void* manageLog(void* arg) {
-        LogData ld;
-        while (execute) {
-                ld = logScriber -> get_data();
-                connectDb();
-                writeDb(ld.dt, ld.data);
-                disconnectDb();
-        }
-        delete logScriber;
-        logIsFinished = true;
-        return NULL;
+	// Ignore signals
+	sigset_t mask;
+	sigfillset(&mask);
+	sigprocmask(SIG_SETMASK, &mask, NULL);
+
+	connectDb();
+	initDb();
+	disconnectDb();
+
+	LogData ld;
+	while (execute) {
+		ld = logScriber -> get_data();
+		connectDb();
+		writeDb(ld.dt, ld.data);
+		disconnectDb();
+	}
+	delete logScriber;
+	logIsFinished = true;
+	return NULL;
 }
 
 
 int main(int argc, char*argv[]) {
-        int key;
-        if (argc > 1) key = std::atoi(argv[1]);
-        else
-                exit(5);
+	int key;
+	if (argc > 1) key = std::atoi(argv[1]);
+	else
+		exit(5);
 
-        struct sigaction handler;
-        pthread_t octoSubT;
+	struct sigaction handler;
+	pthread_t octoSubT;
 
-        handler.sa_handler = end;
+	handler.sa_handler = end;
 
-        if (pthread_create(&octoSubT,
-                                NULL,
-                                subscriber_manager::wait_for_data,
-                                NULL)) {
-                exit(1);
-        }
+	if (pthread_create(&octoSubT,
+				NULL,
+				subscriber_manager::wait_for_data,
+				NULL)) {
+		exit(1);
+	}
 
-        dumpScriber = new subscriber<DataType>("dumpMod", key);
-        logScriber = new subscriber<LogData>("logMod", key);
+	dumpScriber = new subscriber<DataType>("dumpMod", key);
+	logScriber = new subscriber<LogData>("logMod", key);
 
-        if (pthread_create(&dumpManager,
-                                NULL,
-                                manageDump,
-                                NULL)) {
-                exit(1);
-        }
+	if (pthread_create(&dumpManager,
+				NULL,
+				manageDump,
+				NULL)) {
+		exit(1);
+	}
 
-        if (pthread_create(&logManager,
-                                NULL,
-                                manageLog,
-                                NULL)) {
-                exit(1);
-        }
+	if (pthread_create(&logManager,
+				NULL,
+				manageLog,
+				NULL)) {
+		exit(1);
+	}
 
-        sigaction(SIGINT, &handler, 0);
-        sigaction(SIGTERM, &handler, 0);
+	sigaction(SIGINT, &handler, 0);
+	sigaction(SIGTERM, &handler, 0);
 
-        pause();
-        return 0;
+	pause();
+	return 0;
 }
 

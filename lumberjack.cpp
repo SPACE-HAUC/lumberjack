@@ -300,7 +300,7 @@ void disconnectDb() {
 
 
 void connectDb() {
-	loadOrSaveDb(db, "octo", 1);
+	loadOrSaveDb(db, "octo", 0);
 }
 
 
@@ -338,9 +338,11 @@ void* manageDump(void* arg) {
 	sigprocmask(SIG_SETMASK, &mask, NULL);
 	DataType dt;
 
-	connectDb();
-	initDb();
-	disconnectDb();
+	if (db == NULL) {
+		connectDb();
+		initDb();
+		disconnectDb();
+	}
 
 	while (execute) {
 		dt = dumpScriber -> get_data();
@@ -360,9 +362,11 @@ void* manageLog(void* arg) {
 	sigfillset(&mask);
 	sigprocmask(SIG_SETMASK, &mask, NULL);
 
-	connectDb();
-	initDb();
-	disconnectDb();
+	if (db == NULL) {
+		connectDb();
+		initDb();
+		disconnectDb();
+	}
 
 	LogData ld;
 	while (execute) {

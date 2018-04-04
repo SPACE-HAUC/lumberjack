@@ -26,6 +26,10 @@ void end(int signo) {
 
 
 char* dumpDb(DataType dt) {
+	if (dt == NONE) {
+		return msg;
+	}
+
         struct DumpInfo dInfo = {
                 .firstRun = true,
                 .outName = typeMap[dt] + ofName,
@@ -33,10 +37,6 @@ char* dumpDb(DataType dt) {
         char* zErrMsg = 0;
 
         std::remove(dInfo.outName.c_str());
-
-	if (dt == NONE) {
-		return msg;
-	}
 
         if (dt == ALL) {
                 dumpDb(ACS);

@@ -229,6 +229,8 @@ void initDb() {
         typeMap[ACS] = "acs";
         typeMap[POWER] = "power";
         typeMap[BEAM_STEERING] = "beam_steering";
+	typeMap[NONE] = "none";
+	typeMap[ALL] = "all";
 
         // Open the SQLite database
         int rc = sqlite3_open_v2(

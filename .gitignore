@@ -1,2 +1,5 @@
-sqlite_driver
-sqlite_driver.o
+lumberjack
+*.o
+*.csv
+*.py
+octo

@@ -1,21 +1,21 @@
 # Lumberjack - the simple logger
 
-Lumberjack is a quick, thread safe logger with a fresh, simple API. 
+Lumberjack is a quick, thread safe logger with a fresh, simple API.
 
 
-## API Use 
+## API Use
 Lumberjack only knows how to do two things, save data in the database, and throw
 it into a .csv. Let's look at saving things first.
 
 ### Saving
-When saving data, Lumberjack listens for a `LogData` data type. The `LogData` 
+When saving data, Lumberjack listens for a `LogData` data type. The `LogData`
 struct contains a `DataType` (`ACS`, `POWER`, `BEAM_STEERING` supported) and a
 `void*` which will contain your spacetype.
 
 ### Dumping
-When dumping, Lumberjack listens for a `DataType` (`ACS`, `POWER`, 
+When dumping, Lumberjack listens for a `DataType` (`ACS`, `POWER`,
 `BEAM_STEERING`, `ALL`, `NONE`) and will dump to a .csv file based on the table
-name. As of now, the log files generated will look like: `acs_log.csv`, 
+name. As of now, the log files generated will look like: `acs_log.csv`,
 `power_log.csv`, and, `beam_steering_log.csv`
 
 If someone decides to change the table name and doesn't update the this doc I
@@ -28,6 +28,14 @@ Maybe you want to just poke it I guess?
 
 ## Supported Teams
 Anything in `spacetypes.h` is supposed to be supported. As of right now, that
-means `AcsData`, `BeemSteeringData`, and `PowerData`. If the data you're 
+means `AcsData`, `BeemSteeringData`, and `PowerData`. If the data you're
 attempting to store is not in one of those formats, it will throw your data out
 and move on with life.
+
+## NOTES
+It is expected that this is compiled with OctopOS installed on the system.
+Lumberjack will _only_ work as a component of OctopOS and will not work
+otherwise.
+
+There is an include of `subscriber.h` that will not be fulfilled otherwise.
+
